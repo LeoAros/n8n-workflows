@@ -3,6 +3,49 @@
   "nodes": [
     {
       "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        320,
+        16
+      ],
+      "id": "b2dd12bc-c735-4b4b-82a2-a9ba5686e862",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "// El Merge entrega varios items en $items()\n// Vamos a transformar cada item a lo que necesita PostgreSQL\n\nreturn $items().map(item => ({\n  json: {\n    document_name: item.json.file_name ?? \"unknown.pdf\",\n    chunk: item.json.chunk,\n    embedding: item.json.data[0].embedding\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "3d7d1d39-9972-4674-8049-f2b55f11e200",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        992,
+        0
+      ],
+      "id": "c6a16410-4684-43e4-b681-e08e91f00262",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
         "httpMethod": "POST",
         "path": "/store-document",
         "options": {}
@@ -10,11 +53,11 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -576,
-        -16
+        128,
+        16
       ],
-      "id": "fc293be0-98b1-4196-9e0b-0fa4c8b4534b",
-      "name": "Webhook",
+      "id": "bdc9eaf3-835e-448d-9388-6a38102bfc8f",
+      "name": "Webhook1",
       "webhookId": "14dafceb-2d26-44e1-afb8-ca23afb4c7df"
     },
     {
@@ -24,11 +67,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -192,
-        -16
+        512,
+        16
       ],
-      "id": "55fe7dbf-f05d-4507-a598-e6637bdbc1d6",
-      "name": "Code in JavaScript"
+      "id": "37dd5759-27aa-4264-9e02-8d8719c60bb2",
+      "name": "Code in JavaScript2"
     },
     {
       "parameters": {
@@ -61,40 +104,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        48,
-        -96
+        752,
+        -80
       ],
-      "id": "44f9eed4-3061-4cbf-874d-1b3e14c3cf0c",
-      "name": "HTTP Request",
+      "id": "2f3e781a-acda-44a4-b135-36a0f9713dbc",
+      "name": "HTTP Request1",
       "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "operation": "pdf",
-        "binaryPropertyName": "file",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.extractFromFile",
-      "typeVersion": 1.1,
-      "position": [
-        -384,
-        -16
-      ],
-      "id": "a61cf711-d860-409f-9c28-7a7d89d25895",
-      "name": "Extract from File"
-    },
-    {
-      "parameters": {
-        "jsCode": "// El Merge entrega varios items en $items()\n// Vamos a transformar cada item a lo que necesita PostgreSQL\n\nreturn $items().map(item => ({\n  json: {\n    document_name: item.json.file_name ?? \"unknown.pdf\",\n    chunk: item.json.chunk,\n    embedding: item.json.data[0].embedding\n  }\n}));\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        544,
-        -16
-      ],
-      "id": "c6afeed8-bc22-43e9-87d5-8003116a9b39",
-      "name": "Code in JavaScript1"
     },
     {
       "parameters": {
@@ -105,79 +120,72 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        800,
-        -16
+        1504,
+        0
       ],
-      "id": "7d70ddc4-8528-4218-807d-37d5108014b0",
-      "name": "Execute a SQL query",
+      "id": "7ced0fd5-4958-4083-b1cc-189f9be4b513",
+      "name": "Execute a SQL query1",
       "credentials": {
         "postgres": {
-          "id": "JUEOXXtf3IzNGnav",
+          "id": "vg6eMLOcIQ0bu5Hx",
           "name": "Postgres account"
         }
       }
     },
     {
       "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
+        "height": 592,
+        "width": 1952
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        64,
+        -224
+      ],
+      "typeVersion": 1,
+      "id": "dc5ae44c-7499-4724-b6b7-3be2ab607f4b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
         "options": {}
       },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
       "position": [
-        288,
-        -16
+        1712,
+        0
       ],
-      "id": "34f65b88-370e-42fe-a5df-02a19c1bebc3",
-      "name": "Merge"
+      "id": "f9740f46-1d83-42a7-85bb-b5af1fcf76ee",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        240
+      ],
+      "id": "bf0ab364-1092-437e-85ce-8a68f4ab92b2",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "bjeW74FIe4q98779",
+          "name": "Ollama account"
+        }
+      }
     }
   ],
   "pinData": {},
   "connections": {
-    "Webhook": {
-      "main": [
-        [
-          {
-            "node": "Extract from File",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code in JavaScript": {
-      "main": [
-        [
-          {
-            "node": "HTTP Request",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "HTTP Request": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Extract from File": {
       "main": [
         [
           {
-            "node": "Code in JavaScript",
+            "node": "Code in JavaScript2",
             "type": "main",
             "index": 0
           }
@@ -188,16 +196,11 @@
       "main": [
         [
           {
-            "node": "Execute a SQL query",
+            "node": "Execute a SQL query1",
             "type": "main",
             "index": 0
           }
         ]
-      ]
-    },
-    "Execute a SQL query": {
-      "main": [
-        []
       ]
     },
     "Merge": {
@@ -210,17 +213,77 @@
           }
         ]
       ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "38a8ffd3-0bb4-41e0-83c7-2a3c5f34bdc7",
+  "versionId": "41b641c5-8e19-4ce9-96a1-5474769603f9",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "532dc05f3f4ed2bef3dea8c6bc1a312eef90c32b18021721b2633bb99b60b1d2"
+    "instanceId": "6f6a22505b906515dd4ca09e9854330592a77f96cdd89a200256ed4c6ff4abaf"
   },
-  "id": "sePeRVgdfMfK6hRt",
+  "id": "tnJkWFxCWG4v5YKp",
   "tags": []
 }
