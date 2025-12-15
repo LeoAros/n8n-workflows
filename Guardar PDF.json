@@ -10,7 +10,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -256,
+        -576,
         -16
       ],
       "id": "fc293be0-98b1-4196-9e0b-0fa4c8b4534b",
@@ -19,12 +19,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const text = $json.content;\nconst chunkSize = 500;\nconst overlap = 50;\n\nfunction chunkText(text, size, overlap) {\n  const chunks = [];\n  let start = 0;\n  while (start < text.length) {\n    const end = start + size;\n    chunks.push(text.slice(start, end));\n    start += size - overlap;\n  }\n  return chunks;\n}\n\nreturn chunkText(text, chunkSize, overlap).map(chunk => ({ chunk }));\n"
+        "jsCode": "const text = $json.text;\nconst fileName = $json.info.Title || \"unknown_file.pdf\"; // o como venga tu dato\nconst chunkSize = 512;\nconst overlap = 50;\n\nfunction chunkText(text, size, overlap) {\n  const chunks = [];\n  let start = 0;\n\n  while (start < text.length) {\n    chunks.push(text.slice(start, start + size));\n    start += size - overlap;\n  }\n\n  return chunks;\n}\n\nreturn chunkText(text, chunkSize, overlap).map(c => ({\n  json: {\n    file_name: fileName,\n    chunk: c\n  }\n}));\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -48,
+        -192,
         -16
       ],
       "id": "55fe7dbf-f05d-4507-a598-e6637bdbc1d6",
@@ -39,7 +39,7 @@
           "parameters": [
             {
               "name": "=Authorization",
-              "value": "=={{'Bearer ' + $env.OPENAI_API_KEY}}"
+              "value": "={{'Bearer ?'}}"
             }
           ]
         },
@@ -61,22 +61,51 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        160,
-        -16
+        48,
+        -96
       ],
       "id": "44f9eed4-3061-4cbf-874d-1b3e14c3cf0c",
-      "name": "HTTP Request"
+      "name": "HTTP Request",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -384,
+        -16
+      ],
+      "id": "a61cf711-d860-409f-9c28-7a7d89d25895",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "// El Merge entrega varios items en $items()\n// Vamos a transformar cada item a lo que necesita PostgreSQL\n\nreturn $items().map(item => ({\n  json: {\n    document_name: item.json.file_name ?? \"unknown.pdf\",\n    chunk: item.json.chunk,\n    embedding: item.json.data[0].embedding\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        -16
+      ],
+      "id": "c6afeed8-bc22-43e9-87d5-8003116a9b39",
+      "name": "Code in JavaScript1"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO documents (chunk, embedding)\nVALUES (\n  '{{$json.chunk}}',\n  vector '[{{ join($json.data[0].embedding, \",\") }}]'\n);\n",
+        "query": "INSERT INTO documents (document_name, chunk, embedding)\nVALUES (\n  '{{ $json.document_name }}',\n  '{{ $json.chunk }}',\n  '{{ \"[\" + $json.embedding.join(\",\") + \"]\" }}'::vector\n);\n",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        368,
+        800,
         -16
       ],
       "id": "7d70ddc4-8528-4218-807d-37d5108014b0",
@@ -90,18 +119,18 @@
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "{\n  \"status\": \"ok\",\n  \"chunks\": {{$items().length}}\n}\n",
+        "mode": "combine",
+        "combineBy": "combineByPosition",
         "options": {}
       },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.4,
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
       "position": [
-        576,
+        288,
         -16
       ],
-      "id": "dce6dfde-0aa1-4569-afec-e749427fe47e",
-      "name": "Respond to Webhook"
+      "id": "34f65b88-370e-42fe-a5df-02a19c1bebc3",
+      "name": "Merge"
     }
   ],
   "pinData": {},
@@ -110,7 +139,7 @@
       "main": [
         [
           {
-            "node": "Code in JavaScript",
+            "node": "Extract from File",
             "type": "main",
             "index": 0
           }
@@ -124,11 +153,38 @@
             "node": "HTTP Request",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
           }
         ]
       ]
     },
     "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
       "main": [
         [
           {
@@ -141,9 +197,14 @@
     },
     "Execute a SQL query": {
       "main": [
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
         [
           {
-            "node": "Respond to Webhook",
+            "node": "Code in JavaScript1",
             "type": "main",
             "index": 0
           }
@@ -155,7 +216,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "0b994329-4d84-41e5-b47e-ace5c034fb31",
+  "versionId": "38a8ffd3-0bb4-41e0-83c7-2a3c5f34bdc7",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "532dc05f3f4ed2bef3dea8c6bc1a312eef90c32b18021721b2633bb99b60b1d2"
